@@ -11,9 +11,11 @@ dbinit.dbinitClass()
 
 @app.route('/<method>',methods=["POST"])
 def first(method):
-
     return apirtu.apiClass.__init__(None,method)
 
+@app.route('/<method>',methods=["GET"])
+def first1(method):
+    return errors.eOnlyPost()
 
 @app.errorhandler(404)
 def page_not_found(error):

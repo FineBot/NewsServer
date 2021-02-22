@@ -21,3 +21,25 @@ def eNotLoginOrPassword():
         "text": "Wrong username or password",
         "text_ru": "Неправильный логин или пароль"
     }}, ensure_ascii=False)
+
+def eNotPermissions():
+    return json.dumps({"error": {
+        "code": 2,
+        "text": "No access",
+        "text_ru": "Нет доступа"
+    }}, ensure_ascii=False)
+
+def eOnlyPost():
+    return json.dumps({"error": {
+        "code": 3,
+        "text": "Only POST requests",
+        "text_ru": "Только POST запросы"
+    }}, ensure_ascii=False)
+
+def eMissing(name):
+    return json.dumps({"error": {
+        "code": 4,
+        "text": name+" is missing",
+        "text_ru": name+" отсутствует",
+        "name":name
+    }}, ensure_ascii=False)
