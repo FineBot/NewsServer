@@ -30,8 +30,8 @@ class dbinitClass:
 
         cur.execute("""
                  CREATE TABLE IF NOT EXISTS tokens(
-                            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                            userId TEXT NOT NULL UNIQUE,
+                            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+                            userId TEXT NOT NULL,
                             token TEXT NOT NULL UNIQUE
                         );
                 """)
