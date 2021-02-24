@@ -44,6 +44,11 @@ class apiClass:
         print(request.values)
         if (not "keywords" in request.values):
             return errors.eMissing("keywords")
+
+        page = 0
+        if ("page" in request.values):
+            page = int(request.values['page'])
+
         con = sl.connect('site.db')
         cur = con.cursor()
         result = {"result": []}
@@ -52,15 +57,21 @@ class apiClass:
         if(onlytags):
             if(request.values['keywords']=="main"):
                 obj = cur.execute(
-                    "SELECT * FROM news WHERE main=1 ORDER BY publishedAt DESC LIMIT 0,100").fetchall()
+                    "SELECT * FROM news WHERE main=1 ORDER BY publishedAt DESC LIMIT 50 OFFSET ?",(page*50,)).fetchall()
             else:
                 obj = cur.execute(
-                    "SELECT * FROM news WHERE mylower(tags) LIKE ? ORDER BY publishedAt DESC LIMIT 0,100",
-                    ( "%" +urllib.parse.unquote(request.values['keywords']).lower() + "%",)).fetchall()
+                    "SELECT * FROM news WHERE mylower(tags) LIKE ? ORDER BY publishedAt DESC LIMIT 50 OFFSET ?",
+                    ( "%" +urllib.parse.unquote(request.values['keywords']).lower() + "%",page*50)).fetchall()
         else:
-            obj = cur.execute(
-                "SELECT * FROM news WHERE mylower(title) LIKE ? or mylower(tags) LIKE ? ORDER BY publishedAt DESC LIMIT 0,100",
-                ( "%" +urllib.parse.unquote(request.values['keywords']) + "%", "%" + urllib.parse.unquote(request.values['keywords']) + "%")).fetchall()
+            if(urllib.parse.unquote(request.values['keywords'])=="*"):
+                obj = cur.execute(
+                    "SELECT * FROM news ORDER BY publishedAt DESC LIMIT 50 OFFSET ?",(int(page*50),)).fetchall()
+            else:
+                obj = cur.execute(
+                    "SELECT * FROM news WHERE mylower(title) LIKE ? or mylower(tags) LIKE ? ORDER BY publishedAt DESC LIMIT 50 OFFSET ?",
+                    ("%" + urllib.parse.unquote(request.values['keywords']) + "%",
+                     "%" + urllib.parse.unquote(request.values['keywords']) + "%",page*50)).fetchall()
+
 
         if(len(obj)>0):
             for i in range(0, len(obj)):
@@ -83,21 +94,25 @@ class apiClass:
         con = sl.connect('site.db')
         cur=con.cursor()
         result = {"result":{"main":[],"all":[]}}
+        page=0
+        if("page" in request.values):
+            page=int(request.values['page'])
 
-        obj = cur.execute("SELECT * FROM news WHERE main=1 ORDER BY publishedAt DESC LIMIT 0,100").fetchall()
-        for i in range(0, len(obj)):
-            result["result"]["main"].append({
-                "id": obj[i][0],
-                "title": obj[i][1],
-                "source": obj[i][3],
-                "tags": obj[i][4],
-                "author": obj[i][5],
-                "description": obj[i][6],
-                "coverImage": obj[i][7],
-                "publishedAt": obj[i][8],
-            })
+        if(page==0):
+            obj = cur.execute("SELECT * FROM news WHERE main=1 ORDER BY publishedAt DESC LIMIT 0,25").fetchall()
+            for i in range(0, len(obj)):
+                result["result"]["main"].append({
+                    "id": obj[i][0],
+                    "title": obj[i][1],
+                    "source": obj[i][3],
+                    "tags": obj[i][4],
+                    "author": obj[i][5],
+                    "description": obj[i][6],
+                    "coverImage": obj[i][7],
+                    "publishedAt": obj[i][8],
+                })
 
-        obj=cur.execute("SELECT * FROM news WHERE main=0 ORDER BY publishedAt DESC LIMIT 0,100").fetchall()
+        obj=cur.execute("SELECT * FROM news WHERE main=0 ORDER BY publishedAt DESC LIMIT 50 OFFSET ?",(page*50,)).fetchall()
         for i in range(0,len(obj)):
             result["result"]["all"].append({
                 "id":obj[i][0],
