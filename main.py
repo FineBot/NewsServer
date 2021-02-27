@@ -11,7 +11,7 @@ dbinit.dbinitClass()
 
 @app.route('/<method>',methods=["POST"])
 def first(method):
-    return apirtu.apiClass.__init__(None,method)
+    return apirtu.apiClass.__init__({"authorized":False},method)
 
 @app.route('/<method>',methods=["GET"])
 def first1(method):

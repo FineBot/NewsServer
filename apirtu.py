@@ -8,21 +8,24 @@ import random
 import urllib.parse
 import datetime
 
-authorized=False
-userId=-1
-name=None
+
 
 class apiClass:
+
+
     def __init__(self,method):
-        global authorized,name,userId
+        self['authorized'] = False
+        self['userId'] = -1
+        self['name'] = None
         if("token" in request.values):
             con = sl.connect('site.db')
+            print(request.values)
             cur = con.cursor()
-            obj = cur.execute("SELECT * FROM tokens WHERE token=(?)",(request.values['token'],)).fetchall()
+            obj = cur.execute("SELECT * FROM tokens WHERE token=?",(request.values['token'],)).fetchall()
             if(len(obj)==1):
-                userId=obj[0][1]
-                name=cur.execute("SELECT * FROM users WHERE id=(?)",(userId,)).fetchall()[0][1]
-                authorized=True
+                self['userId']=obj[0][1]
+                self['name']=cur.execute("SELECT * FROM users WHERE id=(?)",(self['userId'],)).fetchall()[0][1]
+                self['authorized']=True
 
 
         if(method=="getNews"):
@@ -37,8 +40,25 @@ class apiClass:
             return apiClass.search(self,False)
         elif (method == "searchTags"):
             return apiClass.search(self,True)
+        elif (method == "checkToken"):
+            return apiClass.checkToken(self)
         else: return errors.e404()
 
+    def checkToken(self):
+
+
+        if(self['authorized']):
+            return json.dumps({
+                "result":{
+                    "name":self['name'],
+                    "id":self['userId'],
+                }
+            },ensure_ascii=False)
+
+        else:
+            return json.dumps({
+                "error":False
+            }, ensure_ascii=False)
 
     def search(self,onlytags):
         print(request.values)
@@ -152,9 +172,9 @@ class apiClass:
         return json.dumps(result,ensure_ascii=False)
 
     def createArticle(self):
-        global authorized,name,userId
 
-        if(not authorized):
+
+        if(not self['authorized']):
             return errors.eNotPermissions()
 
         args=["title","content","source","tags","description","coverImage","main"]
@@ -173,7 +193,7 @@ class apiClass:
         cur = con.cursor()
         cur.execute(
             "INSERT INTO news (title,content,source,tags,author,description,coverImage,main,publishedAt) VALUES (?,?,?,?,?,?,?,?,?)",
-            (request.values['title'], request.values['content'], request.values['source'], request.values['tags'], name,
+            (request.values['title'], request.values['content'], request.values['source'], request.values['tags'], self['name'],
              request.values['description'], request.values['coverImage'], request.values['main'], int(time.time())))
         con.commit()
         return json.dumps({"result": 1})
