@@ -19,7 +19,6 @@ class apiClass:
         self['name'] = None
         if("token" in request.values):
             con = sl.connect('site.db')
-            print(request.values)
             cur = con.cursor()
             obj = cur.execute("SELECT * FROM tokens WHERE token=?",(request.values['token'],)).fetchall()
             if(len(obj)==1):
@@ -42,6 +41,8 @@ class apiClass:
             return apiClass.search(self,True)
         elif (method == "checkToken"):
             return apiClass.checkToken(self)
+        elif (method == "editArticle"):
+            return apiClass.editArticle(self)
         else: return errors.e404()
 
     def checkToken(self):
@@ -165,19 +166,53 @@ class apiClass:
                 "description": obj[0][6],
                 "coverImage": obj[0][7],
                 "publishedAt": obj[0][8],
+                "main": obj[0][9],
                 "dateConvert": (datetime.datetime.utcfromtimestamp(obj[0][8]).strftime('%d.%m.%Y, в %H:%M'))
             })
         else:
             result={"error":"not found"}
         return json.dumps(result,ensure_ascii=False)
 
+
+    def editArticle(self):
+        if (not self['authorized']):
+            return errors.eNotPermissions()
+
+        args = ["title", "content", "tags", "description", "main","id"]
+        for i in range(0, len(args)):
+            if (args[i] in request.values):
+                if (args[i] == "tags"):
+                    try:
+                        if (len(json.loads(request.values["tags"])) == 0):
+                            return errors.eMissing(args[i])
+                    except:
+                        return errors.eMissing(args[i])
+                else:
+                    if (request.values[args[i]] == ('' or 'undefined' or None)):
+                        return errors.eMissing(args[i])
+
+            else:
+                return errors.eMissing(args[i])
+
+        con = sl.connect('site.db')
+        cur = con.cursor()
+        cur.execute(
+            "UPDATE news SET title=?,content=?,source=?,tags=?,description=?,main=? WHERE id=?",
+            (request.values['title'], request.values['content'], request.values['source'], request.values['tags'],
+             request.values['description'], request.values['main'], request.values['id']))
+
+        if("coverImage" in request.values):
+            cur.execute(
+            "UPDATE news SET coverImage=? WHERE id=?",
+            (request.values['coverImage'],request.values['id']))
+        con.commit()
+        return json.dumps({"result": 1})
+
     def createArticle(self):
-
-
         if(not self['authorized']):
             return errors.eNotPermissions()
 
-        args=["title","content","source","tags","description","coverImage","main"]
+        args=["title","content","tags","description","coverImage","main"]
         for i in range(0,len(args)):
             if(args[i] in request.values):
                 if(args[i]=="tags"):
@@ -186,6 +221,10 @@ class apiClass:
                             return errors.eMissing(args[i])
                     except:
                         return errors.eMissing(args[i])
+                else:
+                    if(request.values[args[i]]==('' or 'undefined' or None)):
+                        return errors.eMissing(args[i])
+
             else:
                 return errors.eMissing(args[i])
 
