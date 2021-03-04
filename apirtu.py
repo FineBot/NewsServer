@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, render_template
 import json
 import errors
 import sqlite3 as sl
@@ -7,8 +7,8 @@ import time
 import random
 import urllib.parse
 import datetime
-
-
+import base64
+from flask import send_file
 
 class apiClass:
 
@@ -43,6 +43,8 @@ class apiClass:
             return apiClass.checkToken(self)
         elif (method == "editArticle"):
             return apiClass.editArticle(self)
+        elif(method == "getArticleCover"):
+            return apiClass.getArticleCover(self)
         else: return errors.e404()
 
     def checkToken(self):
@@ -188,7 +190,7 @@ class apiClass:
                     except:
                         return errors.eMissing(args[i])
                 else:
-                    if (request.values[args[i]] == ('' or 'undefined' or None)):
+                    if (request.values[args[i]] == '' or request.values[args[i]]=='undefined' or request.values[args[i]]==None):
                         return errors.eMissing(args[i])
 
             else:
@@ -222,7 +224,7 @@ class apiClass:
                     except:
                         return errors.eMissing(args[i])
                 else:
-                    if(request.values[args[i]]==('' or 'undefined' or None)):
+                    if (request.values[args[i]] == '' or request.values[args[i]]=='undefined' or request.values[args[i]]==None):
                         return errors.eMissing(args[i])
 
             else:
