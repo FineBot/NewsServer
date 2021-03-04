@@ -92,8 +92,8 @@ class apiClass:
             else:
                 obj = cur.execute(
                     "SELECT * FROM news WHERE mylower(title) LIKE ? or mylower(tags) LIKE ? ORDER BY publishedAt DESC LIMIT 50 OFFSET ?",
-                    ("%" + urllib.parse.unquote(request.values['keywords']) + "%",
-                     "%" + urllib.parse.unquote(request.values['keywords']) + "%",page*50)).fetchall()
+                    ("%" + urllib.parse.unquote(request.values['keywords']).lower() + "%",
+                     "%" + urllib.parse.unquote(request.values['keywords']).lower() + "%",page*50)).fetchall()
 
 
         if(len(obj)>0):
