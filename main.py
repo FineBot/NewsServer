@@ -9,11 +9,11 @@ app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 dbinit.dbinitClass()
 
-@app.route('/<method>',methods=["POST"])
+@app.route('/<method>',methods=["POST","GET"])
 def first(method):
     return apirtu.apiClass.__init__({"authorized":False},method)
 
-@app.route('/<method>',methods=["GET"])
+@app.route('/dsadsad/<method>',methods=["GET"])
 def first1(method):
     return errors.eOnlyPost()
 

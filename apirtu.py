@@ -1,4 +1,6 @@
-from flask import request, render_template
+from typing import io
+
+from flask import request, render_template, make_response
 import json
 import errors
 import sqlite3 as sl
@@ -6,6 +8,7 @@ import hashlib
 import time
 import random
 import urllib.parse
+from PIL import Image
 import datetime
 import base64
 from flask import send_file
@@ -105,7 +108,7 @@ class apiClass:
                     "tags": obj[i][4],
                     "author": obj[i][5],
                     "description": obj[i][6],
-                    "coverImage": obj[i][7],
+                    "coverImage": "http://127.0.0.1:15234/getArticleCover?id="+str(obj[i][0]),
                     "publishedAt": obj[i][8],
                 })
         else:
@@ -131,7 +134,7 @@ class apiClass:
                     "tags": obj[i][4],
                     "author": obj[i][5],
                     "description": obj[i][6],
-                    "coverImage": obj[i][7],
+                    "coverImage": "http://127.0.0.1:15234/getArticleCover?id="+str(obj[i][0]),
                     "publishedAt": obj[i][8],
                 })
 
@@ -144,7 +147,7 @@ class apiClass:
                 "tags":obj[i][4],
                 "author":obj[i][5],
                 "description":obj[i][6],
-                "coverImage":obj[i][7],
+                "coverImage":"http://127.0.0.1:15234/getArticleCover?id="+str(obj[i][0]),
                 "publishedAt":obj[i][8],
             })
         return json.dumps(result,ensure_ascii=False)
@@ -166,7 +169,7 @@ class apiClass:
                 "tags": obj[0][4],
                 "author": obj[0][5],
                 "description": obj[0][6],
-                "coverImage": obj[0][7],
+                "coverImage": "http://127.0.0.1:15234/getArticleCover?id="+str(obj[0][0]),
                 "publishedAt": obj[0][8],
                 "main": obj[0][9],
                 "dateConvert": (datetime.datetime.utcfromtimestamp(obj[0][8]).strftime('%d.%m.%Y, в %H:%M'))
@@ -232,6 +235,9 @@ class apiClass:
 
         con = sl.connect('site.db')
         cur = con.cursor()
+
+        # (data\:[A-Z-a-z\/\;0-9\,\+=]*)
+
         cur.execute(
             "INSERT INTO news (title,content,source,tags,author,description,coverImage,main,publishedAt) VALUES (?,?,?,?,?,?,?,?,?)",
             (request.values['title'], request.values['content'], request.values['source'], request.values['tags'], self['name'],
@@ -239,6 +245,18 @@ class apiClass:
         con.commit()
         return json.dumps({"result": 1})
 
+    def getArticleCover(self):
+        if("id" in request.values):
+            pass
+        else: errors.eMissing("id")
+        con = sl.connect('site.db')
+        cur = con.cursor()
+        img = cur.execute(
+            "SELECT coverImage from news WHERE id=?",
+            (request.values['id'],)).fetchall()[0][0]
+        response = make_response(base64.b64decode(img.split(",")[1]))
+        response.headers.set('Content-Type', img.split(",")[0].split(";")[0].replace("data:", ""))
+        return response
 
     def createToken(self):
         if(not("login" in request.values and "password" in request.values)):
