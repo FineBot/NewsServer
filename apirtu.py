@@ -8,10 +8,7 @@ import hashlib
 import time
 import random
 import urllib.parse
-from PIL import Image
 import datetime
-import base64
-from flask import send_file
 
 class apiClass:
 
@@ -29,25 +26,28 @@ class apiClass:
                 self['name']=cur.execute("SELECT * FROM users WHERE id=(?)",(self['userId'],)).fetchall()[0][1]
                 self['authorized']=True
 
-
-        if(method=="getNews"):
+        method=method.lower()
+        if(method=="getnews"):
             return apiClass.getNews(self)
         elif(method=="login"):
             return apiClass.createToken(self)
-        elif(method=="createArticle"):
+        elif(method=="createarticle"):
             return apiClass.createArticle(self)
-        elif (method == "getById"):
+        elif (method == "getbyid"):
             return apiClass.getById(self)
         elif (method == "search"):
             return apiClass.search(self,False)
-        elif (method == "searchTags"):
+        elif (method == "searchtags"):
             return apiClass.search(self,True)
-        elif (method == "checkToken"):
+        elif (method == "checktoken"):
             return apiClass.checkToken(self)
-        elif (method == "editArticle"):
+        elif (method == "editarticle"):
             return apiClass.editArticle(self)
-        elif(method == "getArticleCover"):
-            return apiClass.getArticleCover(self)
+        elif (method == "editpassword"):
+            return apiClass.EditPass(self)
+        elif (method == "editname"):
+            return apiClass.EditName(self)
+
         else: return errors.e404()
 
     def checkToken(self):
@@ -161,13 +161,15 @@ class apiClass:
 
         obj = cur.execute("SELECT * FROM news WHERE id=?",(request.values['id'],)).fetchall()
         if(len(obj)>0):
+            objA=cur.execute("SELECT name FROM users WHERE id=?",(obj[0][5],)).fetchall()[0][0]
+
             result["result"].append({
                 "id": obj[0][0],
                 "title": obj[0][1],
                 "content": obj[0][2],
                 "source": obj[0][3],
                 "tags": obj[0][4],
-                "author": obj[0][5],
+                "author": objA,
                 "description": obj[0][6],
                 "coverImage": "http://127.0.0.1:15234/getArticleCover?id="+str(obj[0][0]),
                 "publishedAt": obj[0][8],
@@ -240,23 +242,57 @@ class apiClass:
 
         cur.execute(
             "INSERT INTO news (title,content,source,tags,author,description,coverImage,main,publishedAt) VALUES (?,?,?,?,?,?,?,?,?)",
-            (request.values['title'], request.values['content'], request.values['source'], request.values['tags'], self['name'],
+            (request.values['title'], request.values['content'], request.values['source'], request.values['tags'], self['userId'],
              request.values['description'], request.values['coverImage'], request.values['main'], int(time.time())))
         con.commit()
         return json.dumps({"result": 1})
 
-    def getArticleCover(self):
-        if("id" in request.values):
-            pass
-        else: errors.eMissing("id")
-        con = sl.connect('site.db')
-        cur = con.cursor()
-        img = cur.execute(
-            "SELECT coverImage from news WHERE id=?",
-            (request.values['id'],)).fetchall()[0][0]
-        response = make_response(base64.b64decode(img.split(",")[1]))
-        response.headers.set('Content-Type', img.split(",")[0].split(";")[0].replace("data:", ""))
-        return response
+    def EditName(self):
+        if (not "name" in request.values ):
+            return errors.eMissing("name")
+        if(request.values['name']==''):
+            return errors.eMissing("name")
+
+        if(self['authorized']):
+            con = sl.connect('site.db')
+            cur = con.cursor()
+
+            count=cur.execute("SELECT COUNT(id) FROM users WHERE name=?",(request.values['name'],)).fetchall()[0][0]
+            if(count>0):
+                return json.dumps({"error":0})
+
+
+
+            cur.execute(
+                "UPDATE users SET name=? WHERE id=?",
+                (request.values['name'], self['userId']))
+            con.commit()
+            return json.dumps({"result": 1}, ensure_ascii=False)
+        else:
+            return errors.eNotPermissions()
+
+    def EditPass(self):
+        if (not "pass" in request.values):
+            return errors.eMissing("id")
+        if(request.values['pass']==''):
+            return errors.eMissing("pass")
+
+        if(self['authorized']):
+            con = sl.connect('site.db')
+            cur = con.cursor()
+            cur.execute(
+                "UPDATE users SET password=? WHERE id=?",
+                (request.values['pass'], self['userId']))
+
+            cur.execute(
+                "DELETE FROM tokens WHERE userId=? AND NOT token=?",
+                (self['userId'], request.values['token']))
+            con.commit()
+
+            return json.dumps({"result": 1}, ensure_ascii=False)
+        else:
+            return errors.eNotPermissions()
+
 
     def createToken(self):
         if(not("login" in request.values and "password" in request.values)):
