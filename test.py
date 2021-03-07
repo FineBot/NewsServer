@@ -1,10 +1,11 @@
 import requests
+from threading import Thread
 
-while (True):
+def start():
     url = "http://localhost:15234/createArticle"
 
     payload = {
-        'token': 'aca072693df697fcd37f0a153914fb4fbf846ef12623d7c57a938d92b4c1660ece2292f4a8c77b593dcb70635e5cc29484deccd76a03e96612162defdc0b034f',
+        'token': 'd1d1fe0473879f79d51a38d081cdeb8f220fa1412295fbf9c83832fda02b983f3365fd8ccec985cd8ca1c8ec47556a32003bb06cbb78f627c7d5dc8a6edf1fe2',
         'title': 'Котики захватили мир',
         'content': 'ОГО!',
         'source': 'source',
@@ -20,3 +21,8 @@ while (True):
     response = requests.request("POST", url, headers=headers, data=payload, files=files)
 
     print(response.text)
+
+
+while (True):
+    t1 = Thread(target=start, args=())
+    t1.start()
