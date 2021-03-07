@@ -47,6 +47,8 @@ class apiClass:
             return apiClass.EditPass(self)
         elif (method == "editname"):
             return apiClass.EditName(self)
+        elif (method == "deletearticle"):
+            return apiClass.deleteArticle(self)
 
         else: return errors.e404()
 
@@ -181,11 +183,7 @@ class apiClass:
         return json.dumps(result,ensure_ascii=False)
 
 
-    def editArticle(self):
-        if (not self['authorized']):
-            return errors.eNotPermissions()
-
-        args = ["title", "content", "tags", "description", "main","id"]
+    def checkIn(self,args):
         for i in range(0, len(args)):
             if (args[i] in request.values):
                 if (args[i] == "tags"):
@@ -195,11 +193,22 @@ class apiClass:
                     except:
                         return errors.eMissing(args[i])
                 else:
-                    if (request.values[args[i]] == '' or request.values[args[i]]=='undefined' or request.values[args[i]]==None):
+                    if (request.values[args[i]] == '' or request.values[args[i]]=='undefined' or request.values[args[i]]==None or request.values[args[i]]=="null"):
                         return errors.eMissing(args[i])
 
             else:
                 return errors.eMissing(args[i])
+        return None
+
+    def editArticle(self):
+        if (not self['authorized']):
+            return errors.eNotPermissions()
+
+        ch=apiClass.checkIn(self,["title", "content", "tags", "description", "main","id"])
+
+        if(ch!=None):
+            return ch
+
 
         con = sl.connect('site.db')
         cur = con.cursor()
@@ -215,25 +224,30 @@ class apiClass:
         con.commit()
         return json.dumps({"result": 1})
 
+    def deleteArticle(self):
+        ch=apiClass.checkIn(self,["id"])
+        if (ch != None):
+            return ch
+        con = sl.connect('site.db')
+        cur = con.cursor()
+
+
+        cur.execute(
+            "DELETE FROM news WHERE id=?",
+            (request.values['id'],))
+        con.commit()
+        return json.dumps({"result":1},ensure_ascii=False)
+
+
     def createArticle(self):
         if(not self['authorized']):
             return errors.eNotPermissions()
 
-        args=["title","content","tags","description","coverImage","main"]
-        for i in range(0,len(args)):
-            if(args[i] in request.values):
-                if(args[i]=="tags"):
-                    try:
-                        if (len(json.loads(request.values["tags"])) == 0):
-                            return errors.eMissing(args[i])
-                    except:
-                        return errors.eMissing(args[i])
-                else:
-                    if (request.values[args[i]] == '' or request.values[args[i]]=='undefined' or request.values[args[i]]==None):
-                        return errors.eMissing(args[i])
 
-            else:
-                return errors.eMissing(args[i])
+        ch=apiClass.checkIn(self,["title","content","tags","description","coverImage","main"])
+
+        if (ch != None):
+            return ch
 
         con = sl.connect('site.db')
         cur = con.cursor()
