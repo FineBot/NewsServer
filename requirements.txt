@@ -1,0 +1,15 @@
+setuptools==49.2.0
+Flask==1.1.2
+Flask-Cors==3.0.8
+flask_cors
+flask-cors
+PyMySQL==0.9.3
+psutil==5.7.2
+pymorphy2==0.8
+num2words==0.5.10
+Werkzeug~=1.0.1
+xlrd==1.2.0
+websockets
+requests
+websocket-client
+Pillow

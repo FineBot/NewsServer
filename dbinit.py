@@ -35,5 +35,7 @@ class dbinitClass:
                             token TEXT NOT NULL UNIQUE
                         );
                 """)
+
+        # cur.execute("INSERT INTO users VALUES (0,'test','test')")
         con.commit()
 
